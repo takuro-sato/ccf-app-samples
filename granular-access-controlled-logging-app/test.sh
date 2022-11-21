@@ -60,14 +60,9 @@ check_eq "Disallow user0 to access item0 (maybe after audit)" "204" "$(curl $ser
 check_eq "Try to get item0, but should fail" "403" "$(curl $server/app/log?log_id=0 -X GET $(cert_arg "user0") $only_status_code)"
 
 echo "--- Normal Usage with historical queries ---"
-transaction_id_for_updating_item0=$(curl $server/app/log?log_id=0 -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{ "message": "updated hello" }' -i --silent | grep -i x-ms-ccf-transaction-id | awk '{print $2}' | sed -e 's/\r//g')
-# echo $transaction_id_for_updating_item0 # example output: 2.11
-seqno_for_updating_item0=$(echo $transaction_id_for_updating_item0 | awk '{split($0,a,"."); print a[2]}')
-# echo $seqno_for_updating_item0 # example output: 11
-end_seq_no=$((seqno_for_updating_item0 - 1))
-# echo $end_seq_no #example output: 10
-check_eq "Allow user0 to access items with seqno from 0 to $end_seq_no" "204" "$(curl $server/app/users/$user0_id/permission -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary "{\"allowAnyLogId\": true, \"startSeqNo\": 0, \"endSeqNo\": $end_seq_no}" $only_status_code)"
-check_eq "Try to get item0, but should fail" "403" "$(curl $server/app/log?log_id=0 -X GET $(cert_arg "user0") $only_status_code)"
+check_eq "Update item0" "200" "$(curl $server/app/log?log_id=0 -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{ "message": "updated hello" }' $only_status_code)"
+check_eq "Allow user0 to access items with seqno from 0 to $seqno_for_post_item0" "204" "$(curl $server/app/users/$user0_id/permission -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary "{\"allowAnyLogId\": true, \"startSeqNo\": 0, \"endSeqNo\": $seqno_for_post_item0}" $only_status_code)"
+check_eq "Try to get item0, but should fail because it's not allowed to access" "403" "$(curl $server/app/log?log_id=0 -X GET $(cert_arg "user0") $only_status_code)"
 echo "Waiting for the historical query to be available..."
 while [ "200" != "$(curl "$server/app/log?log_id=0&seq_no=$seqno_for_post_item0" -X GET $(cert_arg "user0") $only_status_code)" ]
 do
