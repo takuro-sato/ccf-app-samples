@@ -38,13 +38,8 @@
         "mode": "readwrite",
         "openapi": {
           "responses": {
-            "200": {
-              "description": "Ok",
-              "content": {
-                "application/json": {
-                  "schema": {}
-                }
-              }
+            "204": {
+              "description": "Ok"
             }
           },
           "requestBody": {

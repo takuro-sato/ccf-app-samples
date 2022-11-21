@@ -48,10 +48,10 @@ echo "Test start"
 
 echo "--- Normal Usage without historical queries ---"
 res_post_item0=$(curl $server/app/log?log_id=0 -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{ "message": "hello" }' -i --silent)
-check_eq "Posting item0 returns 200" "200" "$(echo "$res_post_item0" | grep -i HTTP/1.1 | awk '{print $2}' | sed -e 's/\r//g')"
+check_eq "Posting item0 returns 204" "204" "$(echo "$res_post_item0" | grep -i HTTP/1.1 | awk '{print $2}' | sed -e 's/\r//g')"
 transaction_id_for_post_item0=$(echo "$res_post_item0" | grep -i x-ms-ccf-transaction-id | awk '{print $2}' | sed -e 's/\r//g')
 seqno_for_post_item0=$(echo $transaction_id_for_post_item0 | awk '{split($0,a,"."); print a[2]}')
-check_eq "Post item10" "200" "$(curl $server/app/log?log_id=10 -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{ "message": "hello 10" }' $only_status_code)"
+check_eq "Post item10" "204" "$(curl $server/app/log?log_id=10 -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{ "message": "hello 10" }' $only_status_code)"
 check_eq "Try to get item0, but should fail" "403" "$(curl $server/app/log?log_id=0 -X GET $(cert_arg "user0") $only_status_code)"
 check_eq "Allow user0 to access items with ID from 0 to 9" "204" "$(curl $server/app/users/$user0_id/permission -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{"startLogId": 0, "endLogId": 9, "allowOnlyLatestSeqNo": true}' $only_status_code)"
 check_eq "Get item0" '{"message":"hello"}' "$(curl $server/app/log?log_id=0 -X GET $(cert_arg "user0") --silent)"
@@ -60,7 +60,7 @@ check_eq "Disallow user0 to access item0 (maybe after audit)" "204" "$(curl $ser
 check_eq "Try to get item0, but should fail" "403" "$(curl $server/app/log?log_id=0 -X GET $(cert_arg "user0") $only_status_code)"
 
 echo "--- Normal Usage with historical queries ---"
-check_eq "Update item0" "200" "$(curl $server/app/log?log_id=0 -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{ "message": "updated hello" }' $only_status_code)"
+check_eq "Update item0" "204" "$(curl $server/app/log?log_id=0 -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{ "message": "updated hello" }' $only_status_code)"
 check_eq "Allow user0 to access items with seqno from 0 to $seqno_for_post_item0" "204" "$(curl $server/app/users/$user0_id/permission -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary "{\"allowAnyLogId\": true, \"startSeqNo\": 0, \"endSeqNo\": $seqno_for_post_item0}" $only_status_code)"
 check_eq "Try to get item0, but should fail because it's not allowed to access" "403" "$(curl $server/app/log?log_id=0 -X GET $(cert_arg "user0") $only_status_code)"
 echo "Waiting for the historical query to be available..."

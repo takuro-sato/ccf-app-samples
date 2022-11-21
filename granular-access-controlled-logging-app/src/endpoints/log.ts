@@ -211,7 +211,9 @@ export function setLogItem(request: ccfapp.Request<LogItem>): ccfapp.Response {
   const parsedQuery = parseRequestQuery(request);
   const logId = parseInt(parsedQuery.log_id);
   logMap.set(logId, request.body.json());
-  return {};
+  return {
+    statusCode: 204
+  };
 }
 
 function validatePermission(permission: any): boolean {
