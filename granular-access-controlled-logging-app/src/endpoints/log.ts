@@ -74,50 +74,48 @@ const userIdToPermission = ccfapp.typedKv(
   ccfapp.json<PermissionItem>()
 );
 
+/**
+ * Check user's access to a log item
+ *
+ * If seqNo is not given, it returns whether if the user has access to the latest sequence number.
+ */
 function checkUserAccess(
   userId: string,
   logId: number,
   seqNo?: number
 ): boolean {
-  // If seqNo is not given, it returns whether if the user has access to the latest sequence number.
-  // TODO: improve if statments
-
   // Access is not allowed if perssion is not set explicitly.
   if (!userIdToPermission.has(userId)) {
     return false;
   }
 
+  // Check sequence number.
   const permission = userIdToPermission.get(userId);
-  if (permission.seqNo.type === "ONLY_LATEST" && seqNo) {
-    return false;
-  } else if (permission.seqNo.type === "SPECIFIED_RANGE") {
-    if (
-      seqNo === undefined ||
+  const usingHistoricalQueryBuItIsNotAllowed: boolean =
+    permission.seqNo.type === "ONLY_LATEST" && typeof seqNo === "number";
+  const outOfPermittedSeqNoRange: boolean =
+    permission.seqNo.type === "SPECIFIED_RANGE" &&
+    (seqNo === undefined ||
       (permission.seqNo.range.start === undefined &&
         permission.seqNo.range.last === undefined) ||
       (permission.seqNo.range.start !== undefined &&
         permission.seqNo.range.start > seqNo) ||
       (permission.seqNo.range.last !== undefined &&
-        permission.seqNo.range.last < seqNo)
-    ) {
-      return false;
-    }
+        permission.seqNo.range.last < seqNo));
+  if (usingHistoricalQueryBuItIsNotAllowed || outOfPermittedSeqNoRange) {
+    return false;
   }
 
-  if (permission.logId.type === "ANY") {
-    return true;
-  } else if (
-    (permission.logId.range.start === undefined &&
+  // Check log ID.
+  const outOfPermittedLogIdRange: boolean =
+    permission.logId.type === "SPECIFIED_RANGE" &&
+    ((permission.logId.range.start === undefined &&
       permission.logId.range.last === undefined) ||
-    (permission.logId.range.start !== undefined &&
-      permission.logId.range.start > logId) ||
-    (permission.logId.range.last !== undefined &&
-      permission.logId.range.last < logId)
-  ) {
-    return false;
-  } else {
-    return true;
-  }
+      (permission.logId.range.start !== undefined &&
+        permission.logId.range.start > logId) ||
+      (permission.logId.range.last !== undefined &&
+        permission.logId.range.last < logId));
+  return !outOfPermittedLogIdRange;
 }
 
 interface LogItem {
