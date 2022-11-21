@@ -1,0 +1,5 @@
+**/build/**
+*.deb
+/.venv_ccf_sandbox/
+**/workspace/
+node_modules/
