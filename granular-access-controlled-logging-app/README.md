@@ -14,21 +14,22 @@ This application provides REST-ish API with following endpoints:
 - POST /log/
   - Write a log record
   - It can be called by members
-  - Example request body: TODO
+  - Prams: log_id
+  - Example request body: { "message": "hello 10" }
   - Status code for successful calls: 204
-- PUT: /users/{user_id}/permission
+- POST: /users/{user_id}/permission
   - Set permission for a user (auditor)
   - It can be called by members
-  - Example request body 0: {startSeqNo: 0, lastSeqNo: 100, startLogId: 0: lastLogId: 10}
-  - Example request body 1: {allowAnySeqNo: true, allowAnyLogId: true}
-  - Example request body 2: {allowOnlyLatestSeqNo: true, allowAnyLogId: true}
+  - Example request body 0: { "startSeqNo": 0, "lastSeqNo": 100, "startLogId": 0: "lastLogId": 10 }
+  - Example request body 1: { "allowAnySeqNo": true, "allowAnyLogId": true }
+  - Example request body 2: { "allowOnlyLatestSeqNo": true, "allowAnyLogId": true }
 - GET: /log/
   - Show a log record
   - It can be called by members or users
   - Prams: log_id, seq_no
   - Response: return the item corresponding to the log_id and seq_no. If the log_id or seq_no is not allowed to the user, returns 403.
 
-TODO: implement
+TODO: User PUT for `/users/{user_id}/permission`
 
 ## Why CCF?
 
