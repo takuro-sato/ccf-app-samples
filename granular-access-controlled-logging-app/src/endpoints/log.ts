@@ -45,7 +45,7 @@ function isMember(memberId: string): boolean {
 
 interface Range {
   start?: number;
-  end?: number; // TODO: rename to last
+  last?: number;
 }
 
 type LogIdAccessType = "ANY" | "SPECIFIED_RANGE";
@@ -94,11 +94,11 @@ function checkUserAccess(
     if (
       seqNo === undefined ||
       (permission.seqNo.range.start === undefined &&
-        permission.seqNo.range.end === undefined) ||
+        permission.seqNo.range.last === undefined) ||
       (permission.seqNo.range.start !== undefined &&
         permission.seqNo.range.start > seqNo) ||
-      (permission.seqNo.range.end !== undefined &&
-        permission.seqNo.range.end < seqNo)
+      (permission.seqNo.range.last !== undefined &&
+        permission.seqNo.range.last < seqNo)
     ) {
       return false;
     }
@@ -108,11 +108,11 @@ function checkUserAccess(
     return true;
   } else if (
     (permission.logId.range.start === undefined &&
-      permission.logId.range.end === undefined) ||
+      permission.logId.range.last === undefined) ||
     (permission.logId.range.start !== undefined &&
       permission.logId.range.start > logId) ||
-    (permission.logId.range.end !== undefined &&
-      permission.logId.range.end < logId)
+    (permission.logId.range.last !== undefined &&
+      permission.logId.range.last < logId)
   ) {
     return false;
   } else {
@@ -165,25 +165,25 @@ export function getLogItem(
     };
   } else {
     const rangeBegin = seqNo;
-    const rangeEnd = seqNo;
+    const rangeLast = seqNo;
 
     // Make hundle based on https://github.com/microsoft/CCF/blob/main/samples/apps/logging/js/src/logging.js
     // Compute a deterministic handle for the range request.
     // Note: Instead of ccf.digest, an equivalent of std::hash should be used.
-    const makeHandle = (begin: number, end: number): number => {
-      const cacheKey = `${begin}-${end}`;
+    const makeHandle = (begin: number, last: number): number => {
+      const cacheKey = `${begin}-${last}`;
       const digest = ccf.digest("SHA-256", ccf.strToBuf(cacheKey));
       const handle = new DataView(digest).getUint32(0);
       return handle;
     };
-    const handle = makeHandle(rangeBegin, rangeEnd);
+    const handle = makeHandle(rangeBegin, rangeLast);
 
     // Fetch the requested range
     const expirySeconds = 1800;
     const states = ccf.historical.getStateRange(
       handle,
       rangeBegin,
-      rangeEnd,
+      rangeLast,
       expirySeconds
     );
     if (states === null) {
@@ -192,7 +192,7 @@ export function getLogItem(
         headers: {
           "retry-after": "1",
         },
-        body: `Historical transactions from ${rangeBegin} to ${rangeEnd} are not yet available, fetching now`,
+        body: `Historical transactions from ${rangeBegin} to ${rangeLast} are not yet available, fetching now`,
       };
     }
     const firstKv = states[0].kv;
@@ -212,7 +212,7 @@ export function setLogItem(request: ccfapp.Request<LogItem>): ccfapp.Response {
   const logId = parseInt(parsedQuery.log_id);
   logMap.set(logId, request.body.json());
   return {
-    statusCode: 204
+    statusCode: 204,
   };
 }
 
@@ -222,9 +222,9 @@ function validatePermission(permission: any): boolean {
     "allowAnySeqNo",
     "allowAnyLogId",
     "startSeqNo",
-    "endSeqNo",
+    "lastSeqNo",
     "startLogId",
-    "endLogId",
+    "lastLogId",
     "allowOnlyLatestSeqNo",
   ]);
   const booleanKeys = new Set([
@@ -234,9 +234,9 @@ function validatePermission(permission: any): boolean {
   ]);
   const numberKeys = new Set([
     "startSeqNo",
-    "endSeqNo",
+    "lastSeqNo",
     "startLogId",
-    "endLogId",
+    "lastLogId",
   ]);
   for (const [key, value] of Object.entries(permission)) {
     if (!permissionPropertyKeys.has(key)) {
@@ -255,12 +255,12 @@ function validatePermission(permission: any): boolean {
 
   const p = permission;
   if (p.allowAnyLogId === true) {
-    if (p.startLogId || p.endLogId) {
+    if (p.startLogId || p.lastLogId) {
       return false;
     }
   }
   if (p.allowAnySeqNo === true || p.allowOnlyLatestSeqNo) {
-    if (p.startSeqNo || p.endSeqNo) {
+    if (p.startSeqNo || p.lastSeqNo) {
       return false;
     }
   }
@@ -283,7 +283,7 @@ function convertRequestBodyToPermissionItem(body: any) {
     range: !body.allowAnyLogId
       ? {
           start: body.startLogId,
-          end: body.endLogId,
+          last: body.lastLogId,
         }
       : undefined,
   };
@@ -296,7 +296,7 @@ function convertRequestBodyToPermissionItem(body: any) {
     // type: "SPECIFIED_RANGE"
     permission.seqNo.range = {
       start: body.startSeqNo,
-      end: body.endSeqNo,
+      last: body.lastSeqNo,
     };
   }
   return permission;
