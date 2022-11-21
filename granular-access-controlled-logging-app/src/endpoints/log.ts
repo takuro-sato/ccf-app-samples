@@ -247,7 +247,6 @@ function validatePermission(permission: any): boolean {
   }
 
   // Bisiness logic specific check.
-  const p = permission;
   const specifyingLogIdRangeWhileAllowingAnyLogId =
     permission.allowAnyLogId && (permission.startLogId || permission.lastLogId);
   const specifyingSeqNoRangeWhileAllowingAnySeqNo =
@@ -258,8 +257,12 @@ function validatePermission(permission: any): boolean {
   );
 }
 
+/**
+ * Convert request body to PermissionItem object
+ *
+ * `body` should be validated with validatePermission() before calling this function
+ */
 function convertRequestBodyToPermissionItem(body: any) {
-  // `body` should be validated with validatePermission() before calling this function
   let permission: PermissionItem = {
     logId: {
       type: "SPECIFIED_RANGE",

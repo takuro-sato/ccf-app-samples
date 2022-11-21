@@ -70,6 +70,10 @@ do
 done
 check_eq "Get item0 with seqno=$seqno_for_post_item0 (old contents)" '{"message":"hello"}' "$(curl "$server/app/log?log_id=0&seq_no=$seqno_for_post_item0" -X GET $(cert_arg "user0") --silent)"
 
+echo "--- Error handling---"
+check_eq "Invalid permission 0" "400" "$(curl $server/app/users/$user0_id/permission -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{"startLogId": 0, "lastLogId": 9, "allowAnyLogId": true, "allowOnlyLatestSeqNo": true}' $only_status_code)"
+check_eq "Invalid permission 1" "400" "$(curl $server/app/users/$user0_id/permission -X POST $(cert_arg "member0") -H "Content-Type: application/json" --data-binary '{"allowAnyLogId": true, "startSeqNo": 0, "lastSeqNo": 9, "allowAnySeqNo": true}' $only_status_code)"
+
 echo "OK"
 kill -9 $sandbox_pid
 exit 0
