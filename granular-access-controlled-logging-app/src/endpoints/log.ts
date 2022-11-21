@@ -215,7 +215,7 @@ export function setLogItem(request: ccfapp.Request<LogItem>): ccfapp.Response {
 }
 
 function validatePermission(permission: any): boolean {
-  // TODO: improve check
+  // Check if permission has PermissionItem interface.
   const permissionPropertyKeys = new Set([
     "allowAnySeqNo",
     "allowAnyLogId",
@@ -225,45 +225,37 @@ function validatePermission(permission: any): boolean {
     "lastLogId",
     "allowOnlyLatestSeqNo",
   ]);
-  const booleanKeys = new Set([
-    "allowAnySeqNo",
-    "allowAnyLogId",
-    "allowOnlyLatestSeqNo",
-  ]);
-  const numberKeys = new Set([
-    "startSeqNo",
-    "lastSeqNo",
-    "startLogId",
-    "lastLogId",
-  ]);
+  const valueTypeToProperty = {
+    boolean: new Set([
+      "allowAnySeqNo",
+      "allowAnyLogId",
+      "allowOnlyLatestSeqNo",
+    ]),
+    number: new Set(["startSeqNo", "lastSeqNo", "startLogId", "lastLogId"]),
+  };
   for (const [key, value] of Object.entries(permission)) {
-    if (!permissionPropertyKeys.has(key)) {
-      return false;
-    }
-    if (typeof value !== "boolean" && typeof value != "number") {
-      return false;
-    }
-    if (typeof value === "boolean" && !booleanKeys.has(key)) {
-      return false;
-    }
-    if (typeof value === "number" && !numberKeys.has(key)) {
+    if (
+      !permissionPropertyKeys.has(key) ||
+      !Object.prototype.hasOwnProperty.call(
+        valueTypeToProperty,
+        typeof value
+      ) ||
+      !valueTypeToProperty[typeof value].has(key)
+    ) {
       return false;
     }
   }
 
+  // Bisiness logic specific check.
   const p = permission;
-  if (p.allowAnyLogId === true) {
-    if (p.startLogId || p.lastLogId) {
-      return false;
-    }
-  }
-  if (p.allowAnySeqNo === true || p.allowOnlyLatestSeqNo) {
-    if (p.startSeqNo || p.lastSeqNo) {
-      return false;
-    }
-  }
-
-  return true;
+  const specifyingLogIdRangeWhileAllowingAnyLogId =
+    permission.allowAnyLogId && (permission.startLogId || permission.lastLogId);
+  const specifyingSeqNoRangeWhileAllowingAnySeqNo =
+    permission.allowAnySeqNo && (permission.startSeqNo || permission.lastSeqNo);
+  return (
+    !specifyingLogIdRangeWhileAllowingAnyLogId &&
+    !specifyingSeqNoRangeWhileAllowingAnySeqNo
+  );
 }
 
 function convertRequestBodyToPermissionItem(body: any) {
