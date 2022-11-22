@@ -38,13 +38,27 @@ There are multiple reasons that you want to use CCF for the logging system that 
 - You can build the application so that the owners of the log records can disclose only the records that they want to share with auditors.
 - By using [historical query](https://microsoft.github.io/CCF/main/build_apps/api.html#historical-queries), the owners can disclose only items of specified sequence numbers. For example if the owners allowed an auditor to access seqno 0 to 100, the auditor cannot access to log items newer than seqno 100.
 
-## How to run the app in sandbox
+## How to run the tests
+
+The logging application also has a suite of tests that run in a sandbox; please ensure you do not have an existing sandbox running.
+
+```bash
+cd granular-access-controlled-logging-app
+make test
+```
+
+## Interact with the sandbox manually
+
+You can always run the sandbox yourself: -
 
 ```bash
 $ cd granular-access-controlled-logging-app
-$ npm i # Necessary only for the first time
-
-$ npm run build # Transpile the TypeScript code to JavaScript and copy the output to `dist` directory
-
-$ /opt/ccf/bin/sandbox.sh --js-app-bundle ./dist/
+# The dev container would have installed your npm packages for you
+npm run build # Transpile the TypeScript code to JavaScript and copy the output to `dist` directory
+initial_number_of_banks=3
+initial_number_of_users=2
+/opt/ccf/bin/sandbox.sh --js-app-bundle ./dist/ --initial-member-count $initial_number_of_banks --initial-user-count $initial_number_of_users
 ```
+
+For how to use the app, please see `test.sh` to find example usage with curl command.
+
