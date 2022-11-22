@@ -61,7 +61,7 @@
       }
     },
     "/users/{user_id}/permission": {
-      "post": {
+      "put": {
         "js_module": "endpoints/log.js",
         "js_function": "setUserPermission",
         "forwarding_required": "always",

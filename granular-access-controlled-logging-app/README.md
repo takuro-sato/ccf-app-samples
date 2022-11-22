@@ -17,7 +17,7 @@ This application provides REST-ish API with following endpoints:
   - Prams: log_id
   - Example request body: { "message": "hello 10" }
   - Status code for successful calls: 204
-- POST: /users/{user_id}/permission
+- PUT: /users/{user_id}/permission
   - Set permission for a user (auditor)
   - It can be called by members
   - Example request body 0: { "startSeqNo": 0, "lastSeqNo": 100, "startLogId": 0: "lastLogId": 10 }
@@ -28,8 +28,6 @@ This application provides REST-ish API with following endpoints:
   - It can be called by members or users
   - Prams: log_id, seq_no
   - Response: return the item corresponding to the log_id and seq_no. If the log_id or seq_no is not allowed to the user, returns 403.
-
-TODO: User PUT for `/users/{user_id}/permission`
 
 ## Why CCF?
 
