@@ -55,9 +55,9 @@ You can always run the sandbox yourself: -
 $ cd granular-access-controlled-logging-app
 # The dev container would have installed your npm packages for you
 npm run build # Transpile the TypeScript code to JavaScript and copy the output to `dist` directory
-initial_number_of_banks=3
+initial_number_of_members=3
 initial_number_of_users=2
-/opt/ccf/bin/sandbox.sh --js-app-bundle ./dist/ --initial-member-count $initial_number_of_banks --initial-user-count $initial_number_of_users
+/opt/ccf/bin/sandbox.sh --js-app-bundle ./dist/ --initial-member-count $initial_number_of_members --initial-user-count $initial_number_of_users
 ```
 
 For how to use the app, please see `test.sh` to find example usage with curl command.
