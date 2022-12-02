@@ -2,7 +2,7 @@
 
 # To run this:
 #   docker build -t attestation-container .
-#   docker run -it -rm attestation-container 
+#   docker run -it --rm attestation-container 
 
 FROM golang:1.19
 
