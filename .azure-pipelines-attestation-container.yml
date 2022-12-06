@@ -10,14 +10,18 @@ pr:
 trigger:
   - main
 
-pool:
-  vmImage: ubuntu-latest
+jobs:
+  - template: .azure-pipelines-templates/configure.yml
 
-steps:
-  - script: echo Hello, world!
-    displayName: "Run a one-line script"
+  - template: .azure-pipelines-templates/deploy_aci.yml
+    parameters:
+      used_by:
+        - test_snp
 
-  - script: |
-      echo Add other tasks to build, test, and deploy your project.
-      echo See https://aka.ms/yaml
-    displayName: "Run a multi-line script"
+  - template: .azure-pipelines-templates/test_on_remote.yml
+    parameters:
+      job_name: test_snp
+      display_name: "Test SNP"
+      depends_on: deploy_aci
+      run_on: $[ dependencies.deploy_aci.outputs['deploy_aci.ipAddresses'] ]
+      host_private_key: $[ dependencies.deploy_aci.outputs['generate_ssh_key.hostPrivKey'] ]
