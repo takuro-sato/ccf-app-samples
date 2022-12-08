@@ -16,6 +16,39 @@ jobs:
 
       - script: |
           set -ex
+          cd attestation-container
+          docker build -t attestation-container .
+          # https://learn.microsoft.com/en-us/azure/container-instances/container-instances-tutorial-prepare-acr
+          # resource group
+          if az group list | grep attestationContainer; then
+            echo "group attestationContainer already exist"
+          else
+            az group create --name attestationContainer --location eastus
+            echo "group attestationContainer created"
+          fi
+          # ACR registry
+          if az acr list --resource-group attestationContainer | grep acregistry; then
+            echo "registry acregistry already exist"
+          else
+            az acr create --resource-group attestationContainer --name acregistry --sku Basic
+            echo "registry acregistry created"
+          fi
+          az acr login --name acregistry
+          login_server=$(az acr show --name acregistry --query loginServer --output tsv)
+          GIT_SHA=${LAST_COMMIT[1]}
+          image_version=$GIT_SHA
+          docker tag attestation-container $login_server/attestation-container:$image_version
+          docker images
+          docker push $login_server/attestation-container:$image_version
+          az acr repository list --name acregistry --output table
+          az acr repository show-tags --name acregistry --repository attestation-container --output table
+
+
+        name: build_and_push_attestation_container
+        displayName: "Build and Push Attestation Container"
+
+      - script: |
+          set -ex
           python3.8 scripts/azure_deployment/arm_template.py deploy aci --subscription-id $(CCF_AZURE_SUBSCRIPTION_ID) --resource-group ccf-aci --aci-type dynamic-agent --deployment-name ci-$(Build.BuildNumber) --aci-ssh-keys "$(generate_ssh_key.hostPubKey)" > ~/aci_ips
           echo "##vso[task.setvariable variable=ipAddresses;isOutput=true]`cat ~/aci_ips`"
         name: deploy_attestation_container
