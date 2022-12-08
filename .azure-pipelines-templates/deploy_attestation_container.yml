@@ -27,21 +27,21 @@ jobs:
             echo "group attestationContainer created"
           fi
           # ACR registry
-          if az acr list --resource-group attestationContainer | grep acregistry; then
-            echo "registry acregistry already exist"
+          if az acr list --resource-group attestationContainer | grep attestationcontainerregistry; then
+            echo "registry attestationcontainerregistry already exist"
           else
-            az acr create --resource-group attestationContainer --name acregistry --sku Basic
-            echo "registry acregistry created"
+            az acr create --resource-group attestationContainer --name attestationcontainerregistry --sku Basic
+            echo "registry attestationcontainerregistry created"
           fi
-          az acr login --name acregistry
-          login_server=$(az acr show --name acregistry --query loginServer --output tsv)
+          az acr login --name attestationcontainerregistry
+          login_server=$(az acr show --name attestationcontainerregistry --query loginServer --output tsv)
           GIT_SHA=${LAST_COMMIT[1]}
           image_version=$GIT_SHA
           docker tag attestation-container $login_server/attestation-container:$image_version
           docker images
           docker push $login_server/attestation-container:$image_version
-          az acr repository list --name acregistry --output table
-          az acr repository show-tags --name acregistry --repository attestation-container --output table
+          az acr repository list --name attestationcontainerregistry --output table
+          az acr repository show-tags --name attestationcontainerregistry --repository attestation-container --output table
 
 
         name: build_and_push_attestation_container
