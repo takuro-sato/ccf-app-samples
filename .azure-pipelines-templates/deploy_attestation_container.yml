@@ -12,7 +12,7 @@ jobs:
         name: generate_ssh_key
         displayName: "Generate SSH Key"
 
-      - template: azure_cli.yml
+      - template: azure_cli_ac.yml
 
       - script: |
           set -ex
@@ -74,7 +74,7 @@ jobs:
     dependsOn: ${{ parameters.used_by }}
     condition: always()
     steps:
-      - template: azure_cli.yml
+      - template: azure_cli_ac.yml
 
       - script: |
           set -ex
