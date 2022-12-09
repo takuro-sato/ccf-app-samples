@@ -138,18 +138,6 @@ def make_aci_deployment(parser: ArgumentParser) -> Deployment:
                                             "requests": {"memoryInGB": 16, "cpu": 4}
                                         },
                                     },
-                                },
-                                {
-                                    "name": f"{args.deployment_name}-{i}-attestation-container",
-                                    "properties": {
-                                    "image": "attestationcontainerregistry.azurecr.io/attestation-container:v1",
-                                    "ports": [
-                                        {"protocol": "TCP", "port": 50051},
-                                    ],
-                                    "resources": {
-                                        "requests": {"memoryInGB": 16, "cpu": 4}
-                                    }
-                                    }
                                 }
                             ],
                             "initContainers": [],

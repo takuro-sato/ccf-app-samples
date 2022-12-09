@@ -43,6 +43,8 @@ jobs:
           docker push $login_server/attestation-container:$image_version
           az acr repository list --name attestationcontainerregistry --output table
           az acr repository show-tags --name attestationcontainerregistry --repository attestation-container --output table
+
+
         name: build_and_push_attestation_container
         displayName: "Build and Push Attestation Container"
 
