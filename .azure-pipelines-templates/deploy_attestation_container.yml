@@ -77,8 +77,8 @@ jobs:
           IFS='\n' read -ra IP_ADDR_LIST <<< "$(deploy_attestation_container.ipAddresses)"
           for IP_ADDR in "${IP_ADDR_LIST[@]}"; do
             go run . --addr $IP_ADDR:50051
-            # az container logs --resource-group attestationContainer --name mycontainer --container-name
-            # echo "---"
+            az container logs --resource-group attestationContainer --name ci-$(Build.BuildNumber)-0 --container-name ci-$(Build.BuildNumber)-0-attestation-container
+            echo "---"
           done
         name: test_attestation_container
         displayName: "Test attestation container"
