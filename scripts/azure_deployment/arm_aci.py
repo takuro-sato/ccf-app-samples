@@ -160,6 +160,7 @@ def make_aci_deployment(parser: ArgumentParser) -> Deployment:
                                 "ports": [
                                     {"protocol": "TCP", "port": 8000},
                                     {"protocol": "TCP", "port": 22},
+                                    {"protocol": "TCP", "port": 50051},
                                 ],
                                 "type": "Public",
                             },
