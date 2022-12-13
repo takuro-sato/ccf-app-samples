@@ -211,9 +211,11 @@ def check_aci_deployment(
             pprint.pprint(container_group.ip_address.ports)
             pprint.pprint(container_group.containers)
             pprint.pprint(
-                map(
-                    lambda x: {"name": x.name, "image": x.image},
-                    container_group.containers,
+                list(
+                    map(
+                        lambda x: {"name": x.name, "image": x.image},
+                        container_group.containers,
+                    )
                 )
             )
             print("~~~")
