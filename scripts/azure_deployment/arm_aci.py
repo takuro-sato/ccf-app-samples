@@ -104,7 +104,7 @@ def make_aci_deployment(parser: ArgumentParser) -> Deployment:
                         "type": "Microsoft.ContainerInstance/containerGroups",
                         "apiVersion": "2022-04-01-preview",
                         "name": f"{args.deployment_name}-{i}",
-                        "location": "westeurope",
+                        "location": "useast",
                         "properties": {
                             "sku": "Standard",
                             "confidentialComputeProperties": {
