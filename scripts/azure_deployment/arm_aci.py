@@ -10,6 +10,7 @@ from azure.mgmt.resource.resources.models import (
     Deployment,
     DeploymentProperties,
     DeploymentMode,
+    DeploymentPropertiesExtended,
 )
 from azure.mgmt.containerinstance import ContainerInstanceManagementClient
 
@@ -185,7 +186,9 @@ def remove_aci_deployment(args: Namespace, deployment: Deployment):
         ).wait()
 
 
-def check_aci_deployment(args: Namespace, deployment: Deployment) -> str:
+def check_aci_deployment(
+    args: Namespace, deployment: DeploymentPropertiesExtended
+) -> str:
 
     container_client = ContainerInstanceManagementClient(
         DefaultAzureCredential(), args.subscription_id
@@ -194,6 +197,7 @@ def check_aci_deployment(args: Namespace, deployment: Deployment) -> str:
     pprint.pprint(deployment)
     print("----")
     pprint.pprint(deployment.properties.output_resources)
+    print(len(deployment.properties.output_resources))
     print("&&&&")
     with open("aci_ips", "w") as file:
         for resource in deployment.properties.output_resources:
@@ -203,5 +207,14 @@ def check_aci_deployment(args: Namespace, deployment: Deployment) -> str:
                 args.resource_group, container_name
             )
             pprint.pprint(container_group)
+            pprint.pprint(container_group.ip_address)
+            pprint.pprint(container_group.ip_address.ports)
+            pprint.pprint(container_group.containers)
+            pprint.pprint(
+                map(
+                    lambda x: {"name": x.name, "image": x.image},
+                    container_group.containers,
+                )
+            )
             print("~~~")
             file.write(container_group.ip_address.ip + "\n")

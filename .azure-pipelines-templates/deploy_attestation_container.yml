@@ -72,7 +72,12 @@ jobs:
 
       - script: |
           set -ex
-          echo "Testing attestation container"
+          echo "Testing attestation container..."
+          cd attestation-container/tools/client  
+          IFS='\n' read -ra IP_ADDR_LIST <<< "$(deploy_attestation_container.ipAddresses)"
+          for IP_ADDR in "${IP_ADDR_LIST[@]}"; do
+            go run . --addr $IP_ADDR:50051
+          done
         name: test_attestation_container
         displayName: "Test attestation container"
 
