@@ -193,10 +193,15 @@ def check_aci_deployment(args: Namespace, deployment: Deployment) -> str:
 
     pprint.pprint(deployment)
     print("----")
+    pprint.pprint(deployment.properties.output_resources)
+    print("&&&&")
     with open("aci_ips", "w") as file:
         for resource in deployment.properties.output_resources:
+            pprint.pprint(resource.id)
             container_name = resource.id.split("/")[-1]
             container_group = container_client.container_groups.get(
                 args.resource_group, container_name
             )
+            pprint.pprint(container_group)
+            print("~~~")
             file.write(container_group.ip_address.ip + "\n")
