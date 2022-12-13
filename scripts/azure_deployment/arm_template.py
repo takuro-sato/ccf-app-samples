@@ -9,6 +9,7 @@ from arm_aci import (
     make_aci_deployment,
     remove_aci_deployment,
 )
+import json
 
 parser = argparse.ArgumentParser(
     description="Python interface for Azure ARM deployments",
@@ -58,6 +59,8 @@ parser.add_argument(
 
 args, unknown_args = parser.parse_known_args()
 
+credential = DefaultAzureCredential()
+print(json.dumps(credential))
 resource_client = ResourceManagementClient(
     DefaultAzureCredential(), args.subscription_id
 )
