@@ -36,8 +36,8 @@ jobs:
           az acr login --name attestationcontainerregistry
           login_server=$(az acr show --name attestationcontainerregistry --query loginServer --output tsv)
           GIT_SHA=$(git rev-parse HEAD)
-          image_version=$GIT_SHA # Maybe using run ID is better to avoid conflict?
-          # image_version=v1 # Overwrite image while debugging
+          # image_version=$GIT_SHA # Maybe using run ID is better to avoid conflict?
+          image_version=v1 # Overwrite image while debugging
           docker tag attestation-container $login_server/attestation-container:$image_version
           docker images
           docker push $login_server/attestation-container:$image_version

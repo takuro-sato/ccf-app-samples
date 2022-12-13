@@ -135,7 +135,7 @@ def make_aci_deployment(parser: ArgumentParser) -> Deployment:
                                         ],
                                         "environmentVariables": [],
                                         "resources": {
-                                            "requests": {"memoryInGB": 16, "cpu": 4}
+                                            "requests": {"memoryInGB": 4, "cpu": 1}
                                         },
                                     },
                                 },
@@ -147,7 +147,7 @@ def make_aci_deployment(parser: ArgumentParser) -> Deployment:
                                         {"protocol": "TCP", "port": 50051},
                                     ],
                                     "resources": {
-                                        "requests": {"memoryInGB": 16, "cpu": 4}
+                                        "requests": {"memoryInGB": 4, "cpu": 1}
                                     }
                                     }
                                 }
