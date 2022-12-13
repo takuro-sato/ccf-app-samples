@@ -3,6 +3,7 @@
 
 import os
 from argparse import ArgumentParser, Namespace
+import pprint
 
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource.resources.models import (
@@ -142,15 +143,15 @@ def make_aci_deployment(parser: ArgumentParser) -> Deployment:
                                 {
                                     "name": f"{args.deployment_name}-{i}-attestation-container",
                                     "properties": {
-                                    "image": "attestationcontainerregistry.azurecr.io/attestation-container:v1",
-                                    "ports": [
-                                        {"protocol": "TCP", "port": 50051},
-                                    ],
-                                    "resources": {
-                                        "requests": {"memoryInGB": 4, "cpu": 1}
-                                    }
-                                    }
-                                }
+                                        "image": "attestationcontainerregistry.azurecr.io/attestation-container:v1",
+                                        "ports": [
+                                            {"protocol": "TCP", "port": 50051},
+                                        ],
+                                        "resources": {
+                                            "requests": {"memoryInGB": 4, "cpu": 1}
+                                        },
+                                    },
+                                },
                             ],
                             "initContainers": [],
                             "restartPolicy": "Never",
@@ -190,9 +191,12 @@ def check_aci_deployment(args: Namespace, deployment: Deployment) -> str:
         DefaultAzureCredential(), args.subscription_id
     )
 
-    for resource in deployment.properties.output_resources:
-        container_name = resource.id.split("/")[-1]
-        container_group = container_client.container_groups.get(
-            args.resource_group, container_name
-        )
-        print(container_group.ip_address.ip)
+    pprint.pprint(deployment)
+    print("----")
+    with open("aci_ips", "w") as file:
+        for resource in deployment.properties.output_resources:
+            container_name = resource.id.split("/")[-1]
+            container_group = container_client.container_groups.get(
+                args.resource_group, container_name
+            )
+            file.write(container_group.ip_address.ip + "\n")
