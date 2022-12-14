@@ -25,9 +25,9 @@ type server struct {
 
 func (s *server) FetchAttestation(ctx context.Context, in *pb.FetchAttestationRequest) (*pb.FetchAttestationReply, error) {
 	log.Printf("Received: %v", in.GetPublicKey())
-	inittimeDataBytes := []byte("Init time data bytes")
-	runtimeDataBytes := []byte(in.GetPublicKey())
-	attst, err := attest.FetchSNPReport(true, runtimeDataBytes, inittimeDataBytes)
+	bytesForFakeReport := []byte("")
+	reportData := []byte(in.GetPublicKey())
+	attst, err := attest.FetchSNPReport(true, reportData, bytesForFakeReport)
 	if err != nil {
 		log.Fatalf("Failed to get SNP report")
 	}
@@ -50,20 +50,6 @@ func main() {
 	} else {
 		fmt.Println("Unknown error:", err)
 	}
-
-	// inittimeDataBytes := []byte("Init time data bytes")
-	// runtimeDataBytes := []byte("Pubkey String")
-	// attst, err := attest.FetchSNPReport(true, runtimeDataBytes, inittimeDataBytes);
-	// if err != nil {
-	// 	log.Fatalf("Failed to get SNP report")
-	// }
-	// fmt.Printf("%+v\n", attst)
-	// var SNPReport attest.SNPAttestationReport
-	// if err := SNPReport.DeserializeReport(attst); err != nil {
-	// 	log.Fatalf("failed to deserialize attestation report")
-	// } else {
-	// 	fmt.Printf("%#v\n", SNPReport)
-	// }
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
