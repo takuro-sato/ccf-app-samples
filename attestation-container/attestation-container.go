@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	pb "microsoft/attestation-container/protobuf"
 
@@ -27,6 +29,14 @@ func (s *server) FetchAttestation(ctx context.Context, in *pb.FetchAttestationRe
 
 func main() {
 	fmt.Println("Attestation container started.")
+
+	if _, err := os.Stat("/dev/sev"); err == nil {
+		fmt.Println("/dev/sev detected")
+	} else if errors.Is(err, os.ErrNotExist) {
+		fmt.Println("/dev/sev detected")
+	} else {
+		fmt.Println("Unknown error:", err)
+	}
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
