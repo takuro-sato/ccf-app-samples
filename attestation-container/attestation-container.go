@@ -214,7 +214,7 @@ func main() {
 		unix.SYS_IOCTL,
 		uintptr(fd),
 		uintptr(sevSnpGuestMsgReport),
-		uintptr(unsafe.Pointer(&dummy2)),
+		uintptr(unsafe.Pointer(&dummy2[0])),
 	)
 
 	fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
