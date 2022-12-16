@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// # include "attestation.h"
+// # include "snp-psp.h"
 // typedef struct sev_snp_guest_request sev_snp_guest_request;
 import "C"
 
@@ -235,7 +235,6 @@ func main() {
 	// fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
 
 	fmt.Printf("fd: %d, sevSnpGuestMsgReport: %d, &payload2: %d\n", uintptr(fd), uintptr(sevSnpGuestMsgReport), uintptr(unsafe.Pointer(&payload2)))
-	fmt.Printf("pionter got by C.getPointer %d\n", C.getPointer((*C.sev_snp_guest_request)(unsafe.Pointer(&payload2))))
 	r1, r2, errno := unix.Syscall(
 		unix.SYS_IOCTL,
 		uintptr(fd),
@@ -251,7 +250,6 @@ func main() {
 
 	// fmt.Println("Use full C")
 	fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
-	// C.fetchAttestationReport((*C.msg_report_req)(unsafe.Pointer(&msgReportIn2)), (*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
 	// fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
 	fmt.Println("for GC", unsafe.Pointer(&msgReportIn2), unsafe.Pointer(&msgReportOut2), unsafe.Pointer(&payload2))
 
