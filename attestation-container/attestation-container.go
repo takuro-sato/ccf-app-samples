@@ -234,22 +234,25 @@ func main() {
 
 	// fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
 
-	// r1, r2, err := unix.Syscall(
-	// 	unix.SYS_IOCTL,
-	// 	uintptr(fd),
-	// 	uintptr(sevSnpGuestMsgReport),
-	// 	uintptr(unsafe.Pointer(&payload)),
-	// )
+	fmt.Printf("fd: %d, sevSnpGuestMsgReport: %d, &payload2: %d\n", uintptr(fd), uintptr(sevSnpGuestMsgReport), uintptr(unsafe.Pointer(&payload2)))
+	fmt.Printf("pionter got by C.getPointer %d\n", C.getPointer((*C.sev_snp_guest_request)(unsafe.Pointer(&payload2))))
+	r1, r2, errno := unix.Syscall(
+		unix.SYS_IOCTL,
+		uintptr(fd),
+		uintptr(sevSnpGuestMsgReport),
+		uintptr(unsafe.Pointer(&payload2)),
+	)
 
-	// if errno != 0 {
-	// 	fmt.Printf("ioctl failed:\n  %v\n  %v\n  %v\n", r1, r2, err)
-	// } else {
-	// 	fmt.Println("ioctl ok")
-	// }
+	if errno != 0 {
+		fmt.Printf("ioctl failed:\n  %v\n  %v\n  %v\n", r1, r2, errno)
+	} else {
+		fmt.Printf("ioctl ok:\n  %v\n  %v\n  %v\n", r1, r2, errno)
+	}
 
-	fmt.Println("Use full C")
-	C.fetchAttestationReport((C.int)(fd), (*C.msg_report_req)(unsafe.Pointer(&msgReportIn2)), (*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)), (*C.sev_snp_guest_request)(unsafe.Pointer(&payload2)))
+	// fmt.Println("Use full C")
 	fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
+	C.fetchAttestationReport((C.int)(fd), (*C.msg_report_req)(unsafe.Pointer(&msgReportIn2)), (*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)), (*C.sev_snp_guest_request)(unsafe.Pointer(&payload2)))
+	// fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
