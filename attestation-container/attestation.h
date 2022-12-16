@@ -26,7 +26,7 @@ void fetchAttestationReport(int fd, msg_report_req* msg_report_in, msg_response_
     };
     
     // memset((void*) msg_report_in, 0, sizeof(*msg_report_in));
-    memset((void*) msg_report_out, 0, sizeof(*msg_report_out));
+    // memset((void*) msg_report_out, 0, sizeof(*msg_report_out));
 
     // issue the custom SEV_SNP_GUEST_MSG_REPORT sys call to the sev driver
     rc = ioctl(fd, 3223868161, &payload);
