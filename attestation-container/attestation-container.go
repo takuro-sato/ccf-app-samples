@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
-	"syscall"
+	"strconv"
 	"unsafe"
 
 	pb "microsoft/attestation-container/protobuf"
@@ -177,9 +178,11 @@ func main() {
 	fmt.Printf("Deserialized attestation: %#v\n", SNPReport)
 
 	path := "/dev/sev"
-	fd, err := unix.Open(path, syscall.O_RDWR|syscall.O_CLOEXEC, 0666)
+	fd, err := unix.Open(path, unix.O_RDWR|unix.O_CLOEXEC, 0)
 	if err != nil {
 		fmt.Println("Can't open /dev/sev")
+	} else {
+		fmt.Println("fd:", fd)
 	}
 
 	var msgReportIn = new(MsgReportReq)
@@ -195,12 +198,33 @@ func main() {
 		Error:         0,
 	}
 
+	dummyStr := "050601006000000060c6b48eff7f00000005000000000000c0c6b48eff7f00000000000000000000"
+	var dummy [40]uint8
+	for i := 0; i < len(dummy); i++ {
+		num, err := strconv.ParseInt(dummyStr[i*2:i*2+2], 16, 8)
+		if err != nil {
+			fmt.Println("parse error!", dummyStr[i*2:i*2+2])
+		}
+		dummy[i] = uint8(num)
+	}
+	fmt.Printf("Sizeof dummy : %v\ndummy : %v\n", len(dummy), dummy)
+	dummy2, _ := hex.DecodeString(dummyStr)
+	fmt.Printf("Sizeof dummy2: %v\ndummy2: %v\n", len(dummy2), dummy2)
 	r1, r2, err := unix.Syscall(
 		unix.SYS_IOCTL,
 		uintptr(fd),
 		uintptr(sevSnpGuestMsgReport),
-		uintptr(unsafe.Pointer(&payload)),
+		uintptr(unsafe.Pointer(&dummy2)),
 	)
+
+	fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
+
+	// r1, r2, err := unix.Syscall(
+	// 	unix.SYS_IOCTL,
+	// 	uintptr(fd),
+	// 	uintptr(sevSnpGuestMsgReport),
+	// 	uintptr(unsafe.Pointer(&payload)),
+	// )
 
 	if err != nil {
 		fmt.Printf("ioctl failed:\n  %v\n  %v\n  %v\n", r1, r2, err)
