@@ -206,16 +206,16 @@ func main() {
 	// fmt.Println("msgReportIn2:", msgReportIn2)
 
 	fmt.Printf("MsgReportReq size: %d, MsgResponseResp size: %d\n", unsafe.Sizeof(msgReportIn), unsafe.Sizeof(msgReportOut))
-	// var payload = SEVSNPGuestRequest{
-	// 	ReqMsgType:    SNP_MSG_REPORT_REQ,
-	// 	RspMsgType:    SNP_MSG_REPORT_RSP,
-	// 	MsgVersion:    1,
-	// 	RequestLen:    uint16(96),
-	// 	RequestUaddr:  uint64(uintptr(unsafe.Pointer(&msgReportIn))),
-	// 	ResponseLen:   uint16(1280),
-	// 	ResponseUaddr: uint64(uintptr(unsafe.Pointer(&msgReportOut))),
-	// 	Error:         0,
-	// }
+	var payload = SEVSNPGuestRequest{
+		ReqMsgType:    SNP_MSG_REPORT_REQ,
+		RspMsgType:    SNP_MSG_REPORT_RSP,
+		MsgVersion:    1,
+		RequestLen:    uint16(96),
+		RequestUaddr:  uint64(uintptr(unsafe.Pointer(&msgReportIn))),
+		ResponseLen:   uint16(1280),
+		ResponseUaddr: uint64(uintptr(unsafe.Pointer(&msgReportOut))),
+		Error:         0,
+	}
 
 	fmt.Printf("Pointer for out: %v\n", uintptr(unsafe.Pointer(&msgReportOut)))
 
@@ -235,11 +235,12 @@ func main() {
 	// fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
 
 	fmt.Printf("fd: %d, sevSnpGuestMsgReport: %d, &payload2: %d\n", uintptr(fd), uintptr(sevSnpGuestMsgReport), uintptr(unsafe.Pointer(&payload2)))
+	fmt.Printf("msgReportOut2: %v\n", msgReportOut2)
 	r1, r2, errno := unix.Syscall(
 		unix.SYS_IOCTL,
 		uintptr(fd),
 		uintptr(sevSnpGuestMsgReport),
-		uintptr(unsafe.Pointer(&payload2)),
+		uintptr(unsafe.Pointer(&payload)),
 	)
 
 	if errno != 0 {
@@ -249,9 +250,12 @@ func main() {
 	}
 
 	// fmt.Println("Use full C")
-	fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
 	// fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
+	fmt.Printf("msgReportOut: %v\n", *(*MsgResponseResp)(unsafe.Pointer(&msgReportOut)))
+	// fmt.Printf("msgReportOut: %v\n", msgReportOut)
+	// fmt.Printf("msgReportOut2: %v\n", msgReportOut2)
 	fmt.Println("for GC", unsafe.Pointer(&msgReportIn2), unsafe.Pointer(&msgReportOut2), unsafe.Pointer(&payload2))
+	fmt.Println("for GC", unsafe.Pointer(&msgReportIn), unsafe.Pointer(&msgReportOut), unsafe.Pointer(&payload))
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
