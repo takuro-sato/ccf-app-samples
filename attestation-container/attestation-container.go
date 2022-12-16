@@ -2,14 +2,12 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
-	"strconv"
 	"unsafe"
 
 	pb "microsoft/attestation-container/protobuf"
@@ -18,6 +16,10 @@ import (
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 )
+
+// # include "snp-psp.h"
+// typedef struct sev_snp_guest_request sev_snp_guest_request;
+import "C"
 
 var (
 	port = flag.Int("port", 50051, "The server port")
@@ -188,30 +190,42 @@ func main() {
 	var msgReportIn = new(MsgReportReq)
 	var msgReportOut = new(MsgResponseResp)
 
-	fmt.Printf("MsgReportReq size: %d, MsgResponseResp size: %d\n", unsafe.Sizeof(msgReportIn), unsafe.Sizeof(msgReportOut))
-	var payload = SEVSNPGuestRequest{
-		ReqMsgType:    SNP_MSG_REPORT_REQ,
-		RspMsgType:    SNP_MSG_REPORT_RSP,
-		MsgVersion:    1,
-		RequestLen:    uint16(96),
-		RequestUaddr:  uint64(uintptr(unsafe.Pointer(&msgReportIn))),
-		ResponseLen:   uint16(1280),
-		ResponseUaddr: uint64(uintptr(unsafe.Pointer(&msgReportOut))),
-		Error:         0,
+	var msgReportIn2 = new(C.msg_report_req)
+	var msgReportOut2 = new(C.msg_response_resp)
+	var payload2 = C.sev_snp_guest_request{
+		req_msg_type:   SNP_MSG_REPORT_REQ,
+		rsp_msg_type:   SNP_MSG_REPORT_RSP,
+		msg_version:    1,
+		request_len:    96,
+		request_uaddr:  C.ulong(uintptr(unsafe.Pointer(&msgReportIn2))),
+		response_len:   1280,
+		response_uaddr: C.ulong(uintptr(unsafe.Pointer(&msgReportOut2))),
+		error:          0,
 	}
 
-	dummyStr := "050601006000000060c6b48eff7f00000005000000000000c0c6b48eff7f00000000000000000000"
-	var dummy [40]uint8
-	for i := 0; i < len(dummy); i++ {
-		num, err := strconv.ParseInt(dummyStr[i*2:i*2+2], 16, 0)
-		if err != nil {
-			fmt.Println("parse error!", dummyStr[i*2:i*2+2])
-		}
-		dummy[i] = uint8(num)
-	}
-	fmt.Printf("Sizeof dummy : %v\ndummy : %v\n", len(dummy), dummy)
-	dummy2, _ := hex.DecodeString(dummyStr)
-	fmt.Printf("Sizeof dummy2: %v\ndummy2: %v\n", len(dummy2), dummy2)
+	// var payload2 = new(C.sev_snp_guest_request)
+	// payload2.req_msg_type = SNP_MSG_REPORT_REQ
+	// payload2.rsp_msg_type = SNP_MSG_REPORT_RSP
+	// payload2.msg_version = 1
+	// payload2.request_len = uint16(96)
+	// payload2.request_uaddr = uint64(uintptr(unsafe.Pointer(&msgReportIn2)))
+	// payload2.response_len = uint16(1280)
+	// payload2.response_uaddr = uint64(uintptr(unsafe.Pointer(&msgReportOut)))
+	// payload2.error = 0
+
+	// fmt.Println(msgReportIn2, msgReportOut2)
+
+	fmt.Printf("MsgReportReq size: %d, MsgResponseResp size: %d\n", unsafe.Sizeof(msgReportIn), unsafe.Sizeof(msgReportOut))
+	// var payload = SEVSNPGuestRequest{
+	// 	ReqMsgType:    SNP_MSG_REPORT_REQ,
+	// 	RspMsgType:    SNP_MSG_REPORT_RSP,
+	// 	MsgVersion:    1,
+	// 	RequestLen:    uint16(96),
+	// 	RequestUaddr:  uint64(uintptr(unsafe.Pointer(&msgReportIn))),
+	// 	ResponseLen:   uint16(1280),
+	// 	ResponseUaddr: uint64(uintptr(unsafe.Pointer(&msgReportOut))),
+	// 	Error:         0,
+	// }
 
 	fmt.Printf("Pointer for out: %v\n", uintptr(unsafe.Pointer(&msgReportOut)))
 
@@ -219,12 +233,14 @@ func main() {
 		unix.SYS_IOCTL,
 		uintptr(fd),
 		uintptr(sevSnpGuestMsgReport),
-		uintptr(unsafe.Pointer(&payload)),
+		uintptr(unsafe.Pointer(&payload2)),
 	)
 
-	fmt.Printf("Pointer for msgReportOut: %v\n", uintptr(unsafe.Pointer(&msgReportOut)))
-	fmt.Printf("msgReportOut: %v\n", *(*MsgResponseResp)(unsafe.Pointer(&msgReportOut)))
-	fmt.Printf("payload: %v\n", payload)
+	// fmt.Printf("Pointer for msgReportOut: %v\n", uintptr(unsafe.Pointer(&msgReportOut)))
+	// fmt.Printf("msgReportOut: %v\n", *(*MsgResponseResp)(unsafe.Pointer(&msgReportOut)))
+	// fmt.Printf("payload: %v\n", payload)
+
+	fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
 
 	// fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
 
