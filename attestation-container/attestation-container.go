@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,7 +14,6 @@ import (
 
 	pb "microsoft/attestation-container/protobuf"
 
-	"github.com/Microsoft/confidential-sidecar-containers/pkg/attest"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 )
@@ -87,6 +88,42 @@ type SNPAttestationReport struct {
 	Signature string `json:"signature"`
 }
 
+func (r *SNPAttestationReport) DeserializeReport(report []uint8) error {
+
+	if len(report) != snpReportSize {
+		return fmt.Errorf("invalid snp report size")
+	}
+
+	r.Version = binary.LittleEndian.Uint32(report[0:4])
+	r.GuestSvn = binary.LittleEndian.Uint32(report[4:8])
+	r.Policy = binary.LittleEndian.Uint64(report[8:16])
+	r.FamilyID = hex.EncodeToString(report[16:32])
+	r.ImageID = hex.EncodeToString(report[32:48])
+	r.VMPL = binary.LittleEndian.Uint32(report[48:52])
+	r.SignatureAlgo = binary.LittleEndian.Uint32(report[52:56])
+	r.PlatformVersion = binary.LittleEndian.Uint64(report[56:64])
+	r.PlatformInfo = binary.LittleEndian.Uint64(report[64:72])
+	r.AuthorKeyEn = binary.LittleEndian.Uint32(report[72:76])
+	r.Reserved1 = binary.LittleEndian.Uint32(report[76:80])
+	r.ReportData = hex.EncodeToString(report[80:144])
+	r.Measurement = hex.EncodeToString(report[144:192])
+	r.HostData = hex.EncodeToString(report[192:224])
+	r.IDKeyDigest = hex.EncodeToString(report[224:272])
+	r.AuthorKeyDigest = hex.EncodeToString(report[272:320])
+	r.ReportID = hex.EncodeToString(report[320:352])
+	r.ReportIDMA = hex.EncodeToString(report[352:384])
+	r.ReportedTCB = binary.LittleEndian.Uint64(report[384:392])
+	r.Reserved2 = hex.EncodeToString(report[392:416])
+	r.ChipID = hex.EncodeToString(report[416:480])
+	r.CommittedSvn = binary.LittleEndian.Uint64(report[480:488])
+	r.CommittedVersion = binary.LittleEndian.Uint64(report[488:496])
+	r.LaunchSvn = binary.LittleEndian.Uint64(report[496:504])
+	r.Reserved3 = hex.EncodeToString(report[504:672])
+	r.Signature = hex.EncodeToString(report[672:1184])
+
+	return nil
+}
+
 type SEVSNPGuestRequest struct {
 	ReqMsgType    uint8
 	RspMsgType    uint8
@@ -136,45 +173,8 @@ const (
 
 func (s *server) FetchAttestation(ctx context.Context, in *pb.FetchAttestationRequest) (*pb.FetchAttestationReply, error) {
 	log.Printf("Received: %v", in.GetPublicKey())
-	bytesForFakeReport := []byte("")
+
 	reportData := []byte(in.GetPublicKey())
-	attst, err := attest.FetchSNPReport(true, reportData, bytesForFakeReport)
-	if err != nil {
-		log.Fatalf("Failed to get SNP report")
-	}
-	fmt.Printf("Fetched attestation: %+v\n", attst)
-	var SNPReport attest.SNPAttestationReport
-	if err := SNPReport.DeserializeReport(attst); err != nil {
-		log.Fatalf("failed to deserialize attestation report")
-	}
-	fmt.Printf("Deserialized attestation: %#v\n", SNPReport)
-	return &pb.FetchAttestationReply{Attestation: "Attestation report: " + fmt.Sprintf("%#v\n", SNPReport)}, nil
-}
-
-func main() {
-	fmt.Println("Attestation container started.")
-
-	if _, err := os.Stat("/dev/sev"); err == nil {
-		fmt.Println("/dev/sev detected")
-	} else if errors.Is(err, os.ErrNotExist) {
-		fmt.Println("/dev/sev detected")
-	} else {
-		fmt.Println("Unknown error:", err)
-	}
-
-	bytesForFakeReport := []byte("")
-	reportData := []byte("public key")
-	attst, err := attest.FetchSNPReport(true, reportData, bytesForFakeReport)
-	if err != nil {
-		log.Fatalf("Failed to get SNP report")
-	}
-	// fmt.Printf("Fetched attestation: %+v\n", attst)
-	var SNPReport attest.SNPAttestationReport
-	if err := SNPReport.DeserializeReport(attst); err != nil {
-		log.Fatalf("failed to deserialize attestation report")
-	}
-	fmt.Printf("Deserialized attestation: %#v\n", SNPReport)
-
 	path := "/dev/sev"
 	fd, err := unix.Open(path, unix.O_RDWR|unix.O_CLOEXEC, 0)
 	if err != nil {
@@ -184,6 +184,10 @@ func main() {
 	}
 
 	var msgReportIn = new(MsgReportReq)
+	// Need to improve
+	for i := 0; i < 64 && i < len(reportData); i++ {
+		msgReportIn.ReportData[i] = reportData[i]
+	}
 	var msgReportOut = new(MsgResponseResp)
 
 	var payload = SEVSNPGuestRequest{
@@ -214,6 +218,73 @@ func main() {
 	// fmt.Printf("msgReportOut: %v\n", msgReportOut) // This causes seg fault
 
 	reportBytes := (*MsgResponseResp)(unsafe.Pointer(&msgReportOut)).Report
+	var SNPReport SNPAttestationReport
+	if err := SNPReport.DeserializeReport(reportBytes[:]); err != nil {
+		log.Fatalf("failed to deserialize attestation report")
+	}
+	fmt.Printf("Deserialized attestation: %#v\n", SNPReport)
+
+	fmt.Println("for GC", unsafe.Pointer(&msgReportIn), unsafe.Pointer(&msgReportOut), unsafe.Pointer(&payload))
+	return &pb.FetchAttestationReply{Attestation: "Attestation report: " + fmt.Sprintf("%#v\n", SNPReport)}, nil
+}
+
+func main() {
+	fmt.Println("Attestation container started.")
+
+	if _, err := os.Stat("/dev/sev"); err == nil {
+		fmt.Println("/dev/sev detected")
+	} else if errors.Is(err, os.ErrNotExist) {
+		fmt.Println("/dev/sev detected")
+	} else {
+		fmt.Println("Unknown error:", err)
+	}
+
+	reportData := []byte("public key")
+
+	path := "/dev/sev"
+	fd, err := unix.Open(path, unix.O_RDWR|unix.O_CLOEXEC, 0)
+	if err != nil {
+		fmt.Println("Can't open /dev/sev")
+	} else {
+		fmt.Println("fd:", fd)
+	}
+
+	var msgReportIn = new(MsgReportReq)
+	// Need to improve
+	for i := 0; i < 64 && i < len(reportData); i++ {
+		msgReportIn.ReportData[i] = reportData[i]
+	}
+	var msgReportOut = new(MsgResponseResp)
+
+	var payload = SEVSNPGuestRequest{
+		ReqMsgType:    SNP_MSG_REPORT_REQ,
+		RspMsgType:    SNP_MSG_REPORT_RSP,
+		MsgVersion:    1,
+		RequestLen:    uint16(96),
+		RequestUaddr:  uint64(uintptr(unsafe.Pointer(&msgReportIn))),
+		ResponseLen:   uint16(1280),
+		ResponseUaddr: uint64(uintptr(unsafe.Pointer(&msgReportOut))),
+		Error:         0,
+	}
+
+	r1, r2, errno := unix.Syscall(
+		unix.SYS_IOCTL,
+		uintptr(fd),
+		uintptr(sevSnpGuestMsgReport),
+		uintptr(unsafe.Pointer(&payload)),
+	)
+
+	if errno != 0 {
+		fmt.Printf("ioctl failed:\n  %v\n  %v\n  %v\n", r1, r2, errno)
+	} else {
+		fmt.Printf("ioctl ok:\n  %v\n  %v\n  %v\n", r1, r2, errno)
+	}
+
+	fmt.Printf("msgReportOut: %v\n", *(*MsgResponseResp)(unsafe.Pointer(&msgReportOut)))
+	// fmt.Printf("msgReportOut: %v\n", msgReportOut) // This causes seg fault
+
+	reportBytes := (*MsgResponseResp)(unsafe.Pointer(&msgReportOut)).Report
+	var SNPReport SNPAttestationReport
 	if err := SNPReport.DeserializeReport(reportBytes[:]); err != nil {
 		log.Fatalf("failed to deserialize attestation report")
 	}

@@ -14,10 +14,5 @@ RUN go mod download && go mod verify
 
 COPY . .
 RUN go build -v -o /usr/local/bin/app .
-RUN git clone https://github.com/microsoft/confidential-sidecar-containers.git \
-    && cd confidential-sidecar-containers \
-    && cd tools/get-snp-report && make && cd ../.. \
-    && cp tools/get-snp-report/bin/get-snp-report /bin \
-    && cp tools/get-snp-report/bin/get-fake-snp-report /bin
 
 CMD ["app"]
