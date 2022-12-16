@@ -201,7 +201,7 @@ func main() {
 	dummyStr := "050601006000000060c6b48eff7f00000005000000000000c0c6b48eff7f00000000000000000000"
 	var dummy [40]uint8
 	for i := 0; i < len(dummy); i++ {
-		num, err := strconv.ParseInt(dummyStr[i*2:i*2+2], 16, 8)
+		num, err := strconv.ParseInt(dummyStr[i*2:i*2+2], 16, 0)
 		if err != nil {
 			fmt.Println("parse error!", dummyStr[i*2:i*2+2])
 		}
@@ -214,7 +214,7 @@ func main() {
 		unix.SYS_IOCTL,
 		uintptr(fd),
 		uintptr(sevSnpGuestMsgReport),
-		uintptr(unsafe.Pointer(&dummy2[0])),
+		uintptr(unsafe.Pointer(&dummy[0])),
 	)
 
 	fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
