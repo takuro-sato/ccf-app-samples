@@ -187,13 +187,15 @@ func main() {
 
 	var msgReportIn = new(MsgReportReq)
 	var msgReportOut = new(MsgResponseResp)
+
+	fmt.Printf("MsgReportReq size: %d, MsgResponseResp size: %d\n", unsafe.Sizeof(msgReportIn), unsafe.Sizeof(msgReportOut))
 	var payload = SEVSNPGuestRequest{
 		ReqMsgType:    SNP_MSG_REPORT_REQ,
 		RspMsgType:    SNP_MSG_REPORT_RSP,
 		MsgVersion:    1,
-		RequestLen:    uint16(unsafe.Sizeof(msgReportIn)),
+		RequestLen:    uint16(96),
 		RequestUaddr:  uint64(uintptr(unsafe.Pointer(&msgReportIn))),
-		ResponseLen:   uint16(unsafe.Sizeof(msgReportOut)),
+		ResponseLen:   uint16(1280),
 		ResponseUaddr: uint64(uintptr(unsafe.Pointer(&msgReportOut))),
 		Error:         0,
 	}
@@ -210,14 +212,21 @@ func main() {
 	fmt.Printf("Sizeof dummy : %v\ndummy : %v\n", len(dummy), dummy)
 	dummy2, _ := hex.DecodeString(dummyStr)
 	fmt.Printf("Sizeof dummy2: %v\ndummy2: %v\n", len(dummy2), dummy2)
-	r1, r2, err := unix.Syscall(
+
+	fmt.Printf("Pointer for out: %v\n", uintptr(unsafe.Pointer(&msgReportOut)))
+
+	r1, r2, errno := unix.Syscall(
 		unix.SYS_IOCTL,
 		uintptr(fd),
 		uintptr(sevSnpGuestMsgReport),
-		uintptr(unsafe.Pointer(&dummy[0])),
+		uintptr(unsafe.Pointer(&payload)),
 	)
 
-	fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
+	fmt.Printf("Pointer for msgReportOut: %v\n", uintptr(unsafe.Pointer(&msgReportOut)))
+	fmt.Printf("msgReportOut: %v\n", *(*MsgResponseResp)(unsafe.Pointer(&msgReportOut)))
+	fmt.Printf("payload: %v\n", payload)
+
+	// fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
 
 	// r1, r2, err := unix.Syscall(
 	// 	unix.SYS_IOCTL,
@@ -226,7 +235,7 @@ func main() {
 	// 	uintptr(unsafe.Pointer(&payload)),
 	// )
 
-	if err != nil {
+	if errno != 0 {
 		fmt.Printf("ioctl failed:\n  %v\n  %v\n  %v\n", r1, r2, err)
 	} else {
 		fmt.Println("ioctl ok")
