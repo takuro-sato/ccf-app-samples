@@ -192,16 +192,16 @@ func main() {
 
 	var msgReportIn2 = new(C.msg_report_req)
 	var msgReportOut2 = new(C.msg_response_resp)
-	// var payload2 = C.sev_snp_guest_request{
-	// 	req_msg_type:   SNP_MSG_REPORT_REQ,
-	// 	rsp_msg_type:   SNP_MSG_REPORT_RSP,
-	// 	msg_version:    1,
-	// 	request_len:    96,
-	// 	request_uaddr:  C.ulong(uintptr(unsafe.Pointer(&msgReportIn2))),
-	// 	response_len:   1280,
-	// 	response_uaddr: C.ulong(uintptr(unsafe.Pointer(&msgReportOut2))),
-	// 	error:          0,
-	// }
+	var payload2 = C.sev_snp_guest_request{
+		req_msg_type:   SNP_MSG_REPORT_REQ,
+		rsp_msg_type:   SNP_MSG_REPORT_RSP,
+		msg_version:    1,
+		request_len:    96,
+		request_uaddr:  C.ulong(uintptr(unsafe.Pointer(&msgReportIn2))),
+		response_len:   1280,
+		response_uaddr: C.ulong(uintptr(unsafe.Pointer(&msgReportOut2))),
+		error:          0,
+	}
 
 	// fmt.Println("msgReportIn2:", msgReportIn2)
 
@@ -248,7 +248,7 @@ func main() {
 	// }
 
 	fmt.Println("Use full C")
-	C.fetchAttestationReport((C.int)(fd), (*C.msg_report_req)(unsafe.Pointer(&msgReportIn2)), (*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
+	C.fetchAttestationReport((C.int)(fd), (*C.msg_report_req)(unsafe.Pointer(&msgReportIn2)), (*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)), (*C.sev_snp_guest_request)(unsafe.Pointer(&payload2)))
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
