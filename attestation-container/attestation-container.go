@@ -190,7 +190,7 @@ func main() {
 	var msgReportIn = new(MsgReportReq)
 	var msgReportOut = new(MsgResponseResp)
 
-	// var msgReportIn2 = new(C.msg_report_req)
+	var msgReportIn2 = new(C.msg_report_req)
 	// var msgReportOut2 = new(C.msg_response_resp)
 	// var payload2 = C.sev_snp_guest_request{
 	// 	req_msg_type:   SNP_MSG_REPORT_REQ,
@@ -248,7 +248,7 @@ func main() {
 	// }
 
 	fmt.Println("Use full C")
-	C.fetchAttestationReport((C.int)(fd))
+	C.fetchAttestationReport((C.int)(fd), (*C.msg_report_req)(unsafe.Pointer(&msgReportIn2)))
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
