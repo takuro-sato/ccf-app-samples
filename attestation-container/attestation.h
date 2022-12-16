@@ -10,12 +10,12 @@
 
 #include "snp-psp.h"
 
-void fetchAttestationReport()
+void fetchAttestationReport(int fd)
 {
     msg_report_req msg_report_in;    
     msg_response_resp msg_report_out;
     
-    int fd, rc;	
+    int rc;	
     
     struct sev_snp_guest_request payload = {
         .req_msg_type = SNP_MSG_REPORT_REQ,
@@ -30,13 +30,6 @@ void fetchAttestationReport()
     
     memset((void*) &msg_report_in, 0, sizeof(msg_report_in));        
     memset((void*) &msg_report_out, 0, sizeof(msg_report_out));
-
-    // open the file descriptor of the PSP
-    fd = open("/dev/sev", O_RDWR | O_CLOEXEC);
-
-    if (fd < 0) {
-        fprintf(stdout, "Failed to open /dev/sev\n");        
-    }
 
     // issue the custom SEV_SNP_GUEST_MSG_REPORT sys call to the sev driver
     rc = ioctl(fd, SEV_SNP_GUEST_MSG_REPORT, &payload);

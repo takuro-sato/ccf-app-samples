@@ -190,20 +190,20 @@ func main() {
 	var msgReportIn = new(MsgReportReq)
 	var msgReportOut = new(MsgResponseResp)
 
-	var msgReportIn2 = new(C.msg_report_req)
-	var msgReportOut2 = new(C.msg_response_resp)
-	var payload2 = C.sev_snp_guest_request{
-		req_msg_type:   SNP_MSG_REPORT_REQ,
-		rsp_msg_type:   SNP_MSG_REPORT_RSP,
-		msg_version:    1,
-		request_len:    96,
-		request_uaddr:  C.ulong(uintptr(unsafe.Pointer(&msgReportIn2))),
-		response_len:   1280,
-		response_uaddr: C.ulong(uintptr(unsafe.Pointer(&msgReportOut2))),
-		error:          0,
-	}
+	// var msgReportIn2 = new(C.msg_report_req)
+	// var msgReportOut2 = new(C.msg_response_resp)
+	// var payload2 = C.sev_snp_guest_request{
+	// 	req_msg_type:   SNP_MSG_REPORT_REQ,
+	// 	rsp_msg_type:   SNP_MSG_REPORT_RSP,
+	// 	msg_version:    1,
+	// 	request_len:    96,
+	// 	request_uaddr:  C.ulong(uintptr(unsafe.Pointer(&msgReportIn2))),
+	// 	response_len:   1280,
+	// 	response_uaddr: C.ulong(uintptr(unsafe.Pointer(&msgReportOut2))),
+	// 	error:          0,
+	// }
 
-	fmt.Println("msgReportIn2:", msgReportIn2)
+	// fmt.Println("msgReportIn2:", msgReportIn2)
 
 	fmt.Printf("MsgReportReq size: %d, MsgResponseResp size: %d\n", unsafe.Sizeof(msgReportIn), unsafe.Sizeof(msgReportOut))
 	// var payload = SEVSNPGuestRequest{
@@ -219,21 +219,18 @@ func main() {
 
 	fmt.Printf("Pointer for out: %v\n", uintptr(unsafe.Pointer(&msgReportOut)))
 
-	r1, r2, errno := unix.Syscall(
-		unix.SYS_IOCTL,
-		uintptr(fd),
-		uintptr(sevSnpGuestMsgReport),
-		uintptr(unsafe.Pointer(&payload2)),
-	)
+	// r1, r2, errno := unix.Syscall(
+	// 	unix.SYS_IOCTL,
+	// 	uintptr(fd),
+	// 	uintptr(sevSnpGuestMsgReport),
+	// 	uintptr(unsafe.Pointer(&payload2)),
+	// )
 
 	// fmt.Printf("Pointer for msgReportOut: %v\n", uintptr(unsafe.Pointer(&msgReportOut)))
 	// fmt.Printf("msgReportOut: %v\n", *(*MsgResponseResp)(unsafe.Pointer(&msgReportOut)))
 	// fmt.Printf("payload: %v\n", payload)
 
-	fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
-
-	fmt.Println("Use full C")
-	C.fetchAttestationReport()
+	// fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
 
 	// fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
 
@@ -244,11 +241,14 @@ func main() {
 	// 	uintptr(unsafe.Pointer(&payload)),
 	// )
 
-	if errno != 0 {
-		fmt.Printf("ioctl failed:\n  %v\n  %v\n  %v\n", r1, r2, err)
-	} else {
-		fmt.Println("ioctl ok")
-	}
+	// if errno != 0 {
+	// 	fmt.Printf("ioctl failed:\n  %v\n  %v\n  %v\n", r1, r2, err)
+	// } else {
+	// 	fmt.Println("ioctl ok")
+	// }
+
+	fmt.Println("Use full C")
+	C.fetchAttestationReport((C.int)(fd))
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
