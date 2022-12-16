@@ -203,17 +203,7 @@ func main() {
 		error:          0,
 	}
 
-	// var payload2 = new(C.sev_snp_guest_request)
-	// payload2.req_msg_type = SNP_MSG_REPORT_REQ
-	// payload2.rsp_msg_type = SNP_MSG_REPORT_RSP
-	// payload2.msg_version = 1
-	// payload2.request_len = uint16(96)
-	// payload2.request_uaddr = uint64(uintptr(unsafe.Pointer(&msgReportIn2)))
-	// payload2.response_len = uint16(1280)
-	// payload2.response_uaddr = uint64(uintptr(unsafe.Pointer(&msgReportOut)))
-	// payload2.error = 0
-
-	// fmt.Println(msgReportIn2, msgReportOut2)
+	fmt.Println("msgReportIn2:", msgReportIn2)
 
 	fmt.Printf("MsgReportReq size: %d, MsgResponseResp size: %d\n", unsafe.Sizeof(msgReportIn), unsafe.Sizeof(msgReportOut))
 	// var payload = SEVSNPGuestRequest{
