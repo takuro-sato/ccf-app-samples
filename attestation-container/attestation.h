@@ -10,11 +10,11 @@
 
 #include "snp-psp.h"
 
-void fetchAttestationReport(int fd, msg_report_req* msg_report_in, msg_response_resp* msg_report_out, struct sev_snp_guest_request* payload)
+void fetchAttestationReport(msg_report_req* msg_report_in, msg_response_resp* msg_report_out)
 {   
     // int rc;	
 
-    printf("print debug in CGO...\nfd: %d, &payload: %lu(%p)\n", fd, &payload, &payload);
+    // printf("print debug in CGO...\nfd: %d, &payload: %lu(%p)\n", fd, &payload, &payload);
 
     // issue the custom SEV_SNP_GUEST_MSG_REPORT sys call to the sev driver
     // rc = ioctl(fd, 3223868161, payload);
