@@ -109,7 +109,7 @@ type MsgResponseResp struct {
 	Status     uint32
 	ReportSize uint32
 	Reserved   [24]uint8
-	Report     [1184]byte
+	Report     [1184]uint8
 	Padding    [64]uint8 // padding to the size of SEV_SNP_REPORT_RSP_BUF_SZ (i.e., 1280 bytes)
 }
 
@@ -212,6 +212,13 @@ func main() {
 
 	fmt.Printf("msgReportOut: %v\n", *(*MsgResponseResp)(unsafe.Pointer(&msgReportOut)))
 	// fmt.Printf("msgReportOut: %v\n", msgReportOut) // This causes seg fault
+
+	reportBytes := (*MsgResponseResp)(unsafe.Pointer(&msgReportOut)).Report
+	if err := SNPReport.DeserializeReport(reportBytes[:]); err != nil {
+		log.Fatalf("failed to deserialize attestation report")
+	}
+	fmt.Printf("Deserialized attestation: %#v\n", SNPReport)
+
 	fmt.Println("for GC", unsafe.Pointer(&msgReportIn), unsafe.Pointer(&msgReportOut), unsafe.Pointer(&payload))
 
 	flag.Parse()
