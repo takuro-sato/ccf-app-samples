@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// # include "snp-psp.h"
+// # include "attestation.h"
 // typedef struct sev_snp_guest_request sev_snp_guest_request;
 import "C"
 
@@ -231,6 +231,9 @@ func main() {
 	// fmt.Printf("payload: %v\n", payload)
 
 	fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
+
+	fmt.Println("Use full C")
+	C.fetchAttestationReport()
 
 	// fmt.Printf("Sizeof payload: %v\n", unsafe.Sizeof(payload))
 
