@@ -249,6 +249,7 @@ func main() {
 
 	fmt.Println("Use full C")
 	C.fetchAttestationReport((C.int)(fd), (*C.msg_report_req)(unsafe.Pointer(&msgReportIn2)), (*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)), (*C.sev_snp_guest_request)(unsafe.Pointer(&payload2)))
+	fmt.Printf("msgReportOut2: %v\n", *(*C.msg_response_resp)(unsafe.Pointer(&msgReportOut2)))
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
