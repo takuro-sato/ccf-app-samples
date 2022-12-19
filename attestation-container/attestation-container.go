@@ -171,16 +171,12 @@ const (
 
 // <------------------------- SNP report ------------------------------
 
-func (s *server) FetchAttestation(ctx context.Context, in *pb.FetchAttestationRequest) (*pb.FetchAttestationReply, error) {
-	log.Printf("Received: %v", in.GetPublicKey())
-
-	reportData := []byte(in.GetPublicKey())
+func FetchAttestationReportByte(reportData []byte) ([]byte, error) {
 	path := "/dev/sev"
 	fd, err := unix.Open(path, unix.O_RDWR|unix.O_CLOEXEC, 0)
 	if err != nil {
 		fmt.Println("Can't open /dev/sev")
-	} else {
-		fmt.Println("fd:", fd)
+		return nil, err
 	}
 
 	var msgReportIn = new(MsgReportReq)
@@ -201,7 +197,7 @@ func (s *server) FetchAttestation(ctx context.Context, in *pb.FetchAttestationRe
 		Error:         0,
 	}
 
-	r1, r2, errno := unix.Syscall(
+	_, _, errno := unix.Syscall(
 		unix.SYS_IOCTL,
 		uintptr(fd),
 		uintptr(sevSnpGuestMsgReport),
@@ -209,22 +205,29 @@ func (s *server) FetchAttestation(ctx context.Context, in *pb.FetchAttestationRe
 	)
 
 	if errno != 0 {
-		fmt.Printf("ioctl failed:\n  %v\n  %v\n  %v\n", r1, r2, errno)
-	} else {
-		fmt.Printf("ioctl ok:\n  %v\n  %v\n  %v\n", r1, r2, errno)
+		fmt.Printf("ioctl failed:%v\n", errno)
+		return nil, fmt.Errorf("ioctl failed:%v", errno)
 	}
 
-	fmt.Printf("msgReportOut: %v\n", *(*MsgResponseResp)(unsafe.Pointer(&msgReportOut)))
-	// fmt.Printf("msgReportOut: %v\n", msgReportOut) // This causes seg fault
+	reportBytes := (*MsgResponseResp)(unsafe.Pointer(&msgReportOut)).Report[:]
+	return reportBytes, nil
+}
 
-	reportBytes := (*MsgResponseResp)(unsafe.Pointer(&msgReportOut)).Report
+func (s *server) FetchAttestation(ctx context.Context, in *pb.FetchAttestationRequest) (*pb.FetchAttestationReply, error) {
+	log.Printf("Received: %v", in.GetPublicKey())
+
+	reportData := []byte(in.GetPublicKey()) // Data for `report data` field in attestation report
+	reportBytes, err := FetchAttestationReportByte(reportData)
+	if err != nil {
+		fmt.Println("Failed to fetch attestation report:", err)
+		return nil, fmt.Errorf("failed to fetch attestation report")
+	}
 	var SNPReport SNPAttestationReport
-	if err := SNPReport.DeserializeReport(reportBytes[:]); err != nil {
-		log.Fatalf("failed to deserialize attestation report")
+	if err := SNPReport.DeserializeReport(reportBytes); err != nil {
+		fmt.Println("Failed to deserialize attestation report")
+		return nil, fmt.Errorf("failed to deserialize attestation report")
 	}
 	fmt.Printf("Deserialized attestation: %#v\n", SNPReport)
-
-	fmt.Println("for GC", unsafe.Pointer(&msgReportIn), unsafe.Pointer(&msgReportOut), unsafe.Pointer(&payload))
 	return &pb.FetchAttestationReply{Attestation: "Attestation report: " + fmt.Sprintf("%#v\n", SNPReport)}, nil
 }
 
@@ -232,65 +235,23 @@ func main() {
 	fmt.Println("Attestation container started.")
 
 	if _, err := os.Stat("/dev/sev"); err == nil {
-		fmt.Println("/dev/sev detected")
+		fmt.Println("/dev/sev is detected")
 	} else if errors.Is(err, os.ErrNotExist) {
-		fmt.Println("/dev/sev detected")
+		fmt.Println("/dev/sev is not detected")
 	} else {
 		fmt.Println("Unknown error:", err)
 	}
 
 	reportData := []byte("public key")
-
-	path := "/dev/sev"
-	fd, err := unix.Open(path, unix.O_RDWR|unix.O_CLOEXEC, 0)
+	reportBytes, err := FetchAttestationReportByte(reportData)
 	if err != nil {
-		fmt.Println("Can't open /dev/sev")
-	} else {
-		fmt.Println("fd:", fd)
+		fmt.Println("Failed to fetch attestation report:", err)
 	}
-
-	var msgReportIn = new(MsgReportReq)
-	// Need to improve
-	for i := 0; i < 64 && i < len(reportData); i++ {
-		msgReportIn.ReportData[i] = reportData[i]
-	}
-	var msgReportOut = new(MsgResponseResp)
-
-	var payload = SEVSNPGuestRequest{
-		ReqMsgType:    SNP_MSG_REPORT_REQ,
-		RspMsgType:    SNP_MSG_REPORT_RSP,
-		MsgVersion:    1,
-		RequestLen:    uint16(96),
-		RequestUaddr:  uint64(uintptr(unsafe.Pointer(&msgReportIn))),
-		ResponseLen:   uint16(1280),
-		ResponseUaddr: uint64(uintptr(unsafe.Pointer(&msgReportOut))),
-		Error:         0,
-	}
-
-	r1, r2, errno := unix.Syscall(
-		unix.SYS_IOCTL,
-		uintptr(fd),
-		uintptr(sevSnpGuestMsgReport),
-		uintptr(unsafe.Pointer(&payload)),
-	)
-
-	if errno != 0 {
-		fmt.Printf("ioctl failed:\n  %v\n  %v\n  %v\n", r1, r2, errno)
-	} else {
-		fmt.Printf("ioctl ok:\n  %v\n  %v\n  %v\n", r1, r2, errno)
-	}
-
-	fmt.Printf("msgReportOut: %v\n", *(*MsgResponseResp)(unsafe.Pointer(&msgReportOut)))
-	// fmt.Printf("msgReportOut: %v\n", msgReportOut) // This causes seg fault
-
-	reportBytes := (*MsgResponseResp)(unsafe.Pointer(&msgReportOut)).Report
 	var SNPReport SNPAttestationReport
-	if err := SNPReport.DeserializeReport(reportBytes[:]); err != nil {
-		log.Fatalf("failed to deserialize attestation report")
+	if err := SNPReport.DeserializeReport(reportBytes); err != nil {
+		fmt.Println("Failed to deserialize attestation report")
 	}
 	fmt.Printf("Deserialized attestation: %#v\n", SNPReport)
-
-	fmt.Println("for GC", unsafe.Pointer(&msgReportIn), unsafe.Pointer(&msgReportOut), unsafe.Pointer(&payload))
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
